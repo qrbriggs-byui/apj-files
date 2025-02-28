@@ -178,7 +178,6 @@ animal-service/
     package com.example.animalservice.service;
 
     import com.example.animalservice.model.Animal;
-    import edu.byui.apj.storefront.tutorial91.model.Animal;
     import org.apache.commons.csv.CSVFormat;
     import org.apache.commons.csv.CSVRecord;
     import org.springframework.stereotype.Service;
@@ -219,20 +218,20 @@ animal-service/
             }
         }
     
-        public List getAllAnimals() {
+        public List&lt;Animal&gt; getAllAnimals() {
             return animals;
         }
     
         public Animal getAnimalById(int id) {
-            return animals.stream().filter(animal -> animal.getId() == id).findFirst().orElse(null);
+            return animals.stream().filter(animal -&gt; animal.getId() == id).findFirst().orElse(null);
         }
     
-        public List getAnimalsByDiet(String diet) {
-            return animals.stream().filter(animal -> animal.getDiet().equalsIgnoreCase(diet)).collect(Collectors.toList());
+        public List&lt;Animal&gt; getAnimalsByDiet(String diet) {
+            return animals.stream().filter(animal -&gt; animal.getDiet().equalsIgnoreCase(diet)).collect(Collectors.toList());
         }
     
-        public List searchAnimalsByName(String name) {
-            return animals.stream().filter(animal -> animal.getName().toLowerCase().contains(name.toLowerCase())).collect(Collectors.toList());
+        public List&lt;Animal&gt; searchAnimalsByName(String name) {
+            return animals.stream().filter(animal -&gt; animal.getName().toLowerCase().contains(name.toLowerCase())).collect(Collectors.toList());
         }
     
         public void addAnimal(Animal animal) {
@@ -240,9 +239,8 @@ animal-service/
         }
     
         public void removeAnimal(int id) {
-            animals.removeIf(animal -> animal.getId() == id);
+            animals.removeIf(animal -&gt; animal.getId() == id);
         }
-    }
 </code>
         </pre>
         <p>See the previous response for the full code of the AnimalService class.</p>
@@ -322,7 +320,7 @@ animal-service/
             <li><code>GET /animals</code>: Get all animals.</li>
             <li><code>GET /animals/1</code>: Get animal with ID 1.</li>
             <li><code>GET /animals/diet/herbivore</code>: Get animals with a herbivore diet.</li>
-            <li><code>GET /animals/search?name=lion</code>: Search for animals with "lion" in their name.</li>
+            <li><code>GET /animals/search?name=Simba</code>: Search for animals named Simba.</li>
             <li><code>POST /animals</code>: Add a new animal (JSON body required). See <a
                     href="files/hyena.json">hyena.json</a> for an example.</li>
             <li><code>DELETE /animals/1</code>: Remove animal with ID 1.</li>
