@@ -178,6 +178,7 @@ animal-service/
     package com.example.animalservice.service;
 
     import com.example.animalservice.model.Animal;
+    import edu.byui.apj.storefront.tutorial91.model.Animal;
     import org.apache.commons.csv.CSVFormat;
     import org.apache.commons.csv.CSVRecord;
     import org.springframework.stereotype.Service;
@@ -193,7 +194,7 @@ animal-service/
     @Service
     public class AnimalService {
     
-        private final List<Animal> animals = new ArrayList<>();
+        private final List&lt;Animal&gt; animals = new ArrayList&lt;&gt;();
     
         public AnimalService() {
             loadAnimalsFromCsv();
@@ -203,7 +204,7 @@ animal-service/
             try {
                 ClassPathResource resource = new ClassPathResource("animals.csv");
                 Reader reader = new InputStreamReader(resource.getInputStream());
-                Iterable<CSVRecord> records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
+                Iterable&lt;CSVRecord&gt; records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
     
                 for (CSVRecord record : records) {
                     int id = Integer.parseInt(record.get("id"));
@@ -218,7 +219,7 @@ animal-service/
             }
         }
     
-        public List<Animal> getAllAnimals() {
+        public List getAllAnimals() {
             return animals;
         }
     
@@ -226,11 +227,11 @@ animal-service/
             return animals.stream().filter(animal -> animal.getId() == id).findFirst().orElse(null);
         }
     
-        public List<Animal> getAnimalsByDiet(String diet) {
+        public List getAnimalsByDiet(String diet) {
             return animals.stream().filter(animal -> animal.getDiet().equalsIgnoreCase(diet)).collect(Collectors.toList());
         }
     
-        public List<Animal> searchAnimalsByName(String name) {
+        public List searchAnimalsByName(String name) {
             return animals.stream().filter(animal -> animal.getName().toLowerCase().contains(name.toLowerCase())).collect(Collectors.toList());
         }
     
@@ -268,7 +269,7 @@ animal-service/
         private AnimalService animalService;
     
         @GetMapping
-        public List<Animal> getAllAnimals() {
+        public List&lt;Animal&gt; getAllAnimals() {
             return animalService.getAllAnimals();
         }
     
@@ -278,12 +279,12 @@ animal-service/
         }
     
         @GetMapping("/diet/{diet}")
-        public List<Animal> getAnimalsByDiet(@PathVariable String diet) {
+        public List&lt;Animal&gt; getAnimalsByDiet(@PathVariable String diet) {
             return animalService.getAnimalsByDiet(diet);
         }
     
         @GetMapping("/search")
-        public List<Animal> searchAnimalsByName(@RequestParam String name) {
+        public List&lt;Animal&gt; searchAnimalsByName(@RequestParam String name) {
             return animalService.searchAnimalsByName(name);
         }
     
