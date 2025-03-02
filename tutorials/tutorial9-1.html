@@ -5,13 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spring Boot Animal Service Tutorial</title>
+    <link rel="stylesheet" href="css/common.css">
     <style>
-        body {
-            font-family: sans-serif;
-            margin: 20px;
-            background-color: aliceblue;
-        }
-
         h1,
         h2 {
             color: #333;
@@ -30,19 +25,7 @@
         .section {
             margin-bottom: 20px;
         }
-        header, footer{
-            background-color: rgb(0, 109, 182);
-            color: white;
-            display: flex;
-            align-items: center;            
-        }
-        header h2{
-            color: white;
-            padding-left: 5rem;
-        }
-        footer p{
-            padding: 1rem;
-        }
+
     </style>
 </head>
 
@@ -73,6 +56,15 @@
 
     <div class="section">
         <h2>2. Project Structure</h2>
+        <p>Use the project structure below as a guide about where to put files.</p>
+        <p>Notice the package organization:</p>
+        <ul>
+            <li>The <strong>model</strong> package will contain plain data objects, also known as JavaBeans.</li>
+            <li>The <strong>service</strong> package will contain service classes that hold the business logic necessary to retrieving data.</li>
+            <li>The <strong>controller</strong> package will contain controller classes that are responsible for handling HTTP requests and routing them to service classes for handling.</li>
+            <li>The <strong>application</strong> class lives in the root package.</li>
+            <li>Resource files are found in <strong>src/main/resources</strong> and are packaged with the application by maven.</li>
+        </ul>
         <pre>
 animal-service/
 ├── src/main/java/
@@ -93,6 +85,7 @@ animal-service/
 
     <div class="section">
         <h2>3. Animal Model (Animal.java)</h2>
+        <p>This contains the data represenation of an Animal.</p>
         <pre>
 <code class="code">
     package com.example.animalservice.model;
@@ -173,6 +166,9 @@ animal-service/
 
     <div class="section">
         <h2>4. Animal Service (AnimalService.java)</h2>
+        <p>This class is responsible for loading Animal data from a the CSV file we placed in the resources folder into in in-memory List.</p>
+        <p>The class also handles things like searching the list, adding to the list, removing items from the list, etc. using streams.</p>
+        <p>The class ClassPathResource helps Java find the actual location of the files we included in the resources folder. Maven will put them in the root of the classpath (look in the <strong>target/classes</strong> directory after building to see what I mean.)</p>
         <pre>
 <code class="code">
     package com.example.animalservice.service;
@@ -241,13 +237,15 @@ animal-service/
         public void removeAnimal(int id) {
             animals.removeIf(animal -&gt; animal.getId() == id);
         }
-</code>
-        </pre>
-        <p>See the previous response for the full code of the AnimalService class.</p>
+    }
+</code></pre>        
     </div>
 
     <div class="section">
         <h2>5. Animal Controller (AnimalController.java)</h2>
+        <p>The AnimalController maps all of the HTTP request endpoints to their respective service methods. The controller also gathers query parameters from the request as needed.</p>
+        <p>@PathVariable is used for variables that appear as part of the path (e.g. /diet/herbivore).</p>
+        <p>@RequestParam will look for parameters that appear after the ? in the URL (e.g. /search?name=Fido)</p>
         <pre>
 <code class="code">
     package com.example.animalservice.controller;
@@ -307,14 +305,34 @@ animal-service/
     </div>
 
     <div class="section">
-        <h2>7. Application Properties (application.properties)</h2>
-        <p>No specific properties are needed for this example.</p>
+        <h2>7. Swagger API Documentation</h2>
+        <p>Using SpringDoc, you can quickly and easily add Swagger (OpenAPI) to your Spring Boot API.</p>
+        <p>In your pom.xml (for Maven) or build.gradle (for Gradle), add the SpringDoc OpenAPI dependency.</p>
+        <p>You can now access the Swagger UI by opening a browser and navigating to: <a href="http://localhost:8080/swagger-ui/index.html">http://localhost:8080/swagger-ui/index.html</a></p>        
+        <pre>
+&lt;code&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springdoc&lt;/groupId&gt;
+        &lt;artifactId&gt;springdoc-openapi-starter-webmvc-ui&lt;/artifactId&gt;
+        &lt;version&gt;2.3.0&lt;/version&gt; 
+    &lt;/dependency&gt;                
+&lt;/code&gt;</pre>
     </div>
 
     <div class="section">
-        <h2>8. Running the Application</h2>
+        <h2>8. Application Properties (application.properties)</h2>
+        <p>You can change where Swagger is accessed from using the properties below.</p>
+        <pre>
+springdoc.api-docs.path=/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html</pre>
+    </div>
+
+    <div class="section">
+        <h2>9. Running the Application</h2>
         <p>Run the <code>AnimalServiceApplication</code> using <code>mvn spring-boot:run</code> and test the endpoints
-            using Postman or curl.</p>
+            using Swagger.</p>
+        <p>You can also run this code by using <code>mvn package</code> and then <code>java -jar .\target\tutorial9-1-0.0.1-SNAPSHOT.jar</code></p>
+        <p>HINT: You might find it useful to know how to do this for tutorial9-2.</p>
         <h3>Example Endpoints:</h3>
         <ul>
             <li><code>GET /animals</code>: Get all animals.</li>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Client Tutorial</title>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        h1, h2 {
+            color: #333;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        .code {
+            font-family: monospace;
+        }
+        .section{
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a class="byuiLogo" title="BYU-Idaho Website" href="https://www.byui.edu"><img src="img/logo.webp"></a>
+        <h2>CSE 290R | Applied Programming with Java</h2>
+    </header>
+
+    <h1>Animal Client Tutorial</h1>
+
+    <p>This tutorial will guide you through building a Spring Boot application that consumes the Animal RESTful web service.</p>
+
+    <div class="section">
+        <h2>1. Project Setup</h2>
+        <p>Use Spring Initializr (start.spring.io) or your IDE to create a new Spring Boot project. Add the "Spring Web" and "Thymeleaf" dependencies.</p>
+    </div>
+
+    <div class="section">
+        <h2>2. Project Structure</h2>
+        <p>Use the project structure below as a guide about where to put files.</p>
+        <p>Notice the package organization:</p>
+        <ul>
+            <li>The <strong>model</strong> package will contain plain data objects, also known as JavaBeans.</li>
+            <li>The <strong>service</strong> package will contain service classes that hold the business logic necessary to retrieving data.</li>
+            <li>The <strong>controller</strong> package will contain controller classes that are responsible for handling HTTP requests and routing them to service classes for handling.</li>
+            <li>The <strong>application</strong> class lives in the root package.</li>
+            <li>Resource files are found in <strong>src/main/resources</strong> and are packaged with the application by maven.</li>
+        </ul>        
+        <pre>
+animal-client/
+├── src/main/java/
+│   └── com/example/animalclient/
+|       ├──model/ 
+|       |   └── Animal.java
+│       ├── controller/
+│       │   └── AnimalClientController.java
+│       ├── service/
+│       │   └── AnimalClientService.java
+│       ├── AnimalClientApplication.java
+├── src/main/resources/
+│   ├── application.properties
+│   ├── templates/
+│       └── index.html
+└── pom.xml 
+        </pre>
+    </div>
+
+    <div class="section">
+        <h2>3. Animal Client Service (AnimalClientService.java)</h2>      
+        <pre>
+<code class="code">
+    package com.example.animalclient.service;
+
+    import com.example.animalclient.model.Animal;
+    import org.springframework.beans.factory.annotation.Value;
+    import org.springframework.core.ParameterizedTypeReference;
+    import org.springframework.http.HttpMethod;
+    import org.springframework.http.ResponseEntity;
+    import org.springframework.stereotype.Service;
+    import org.springframework.web.client.RestTemplate;
+    import org.springframework.web.reactive.function.client.WebClient;
+    import reactor.core.publisher.Mono;
+    
+    import java.util.List;
+    
+    @Service
+    public class AnimalClientService {
+    
+        private final String animalServiceUrl;
+        private final RestTemplate restTemplate;
+        private final WebClient webClient;
+    
+        public AnimalClientService(@Value("${animal.service.url}") String animalServiceUrl) {
+            this.animalServiceUrl = animalServiceUrl;
+            this.restTemplate = new RestTemplate();
+            this.webClient = WebClient.builder().baseUrl(animalServiceUrl).build();
+        }
+    
+        public List&lt;Animal&gt; getAllAnimalsRestTemplate() {
+            ResponseEntity&lt;List&lt;Animal&gt;&gt; response = restTemplate.exchange(animalServiceUrl + "/animals", HttpMethod.GET, null, new ParameterizedTypeReference&lt;List&lt;Animal&gt;&gt;() {});
+            return response.getBody();
+        }
+    
+        public List&lt;Animal&gt; getAllAnimalsWebClient() {
+            return webClient.get().uri("/animals").retrieve().bodyToFlux(Animal.class).collectList().block();
+        }
+    
+        public Animal getAnimalByIdRestTemplate(int id) {
+            ResponseEntity&lt;Animal&gt; response = restTemplate.exchange(animalServiceUrl + "/animals/" + id, HttpMethod.GET, null, Animal.class);
+            return response.getBody();
+        }
+    
+        public Animal getAnimalByIdWebClient(int id) {
+            return webClient.get().uri("/animals/" + id).retrieve().bodyToMono(Animal.class).block();
+        }
+    
+        public void addAnimalRestTemplate(Animal animal) {
+            restTemplate.postForEntity(animalServiceUrl + "/animals", animal, Void.class);
+        }
+    
+        public void addAnimalWebClient(Animal animal) {
+            webClient.post().uri("/animals").body(Mono.just(animal), Animal.class).retrieve().bodyToMono(Void.class).block();
+        }
+    
+        public void removeAnimalRestTemplate(int id) {
+            restTemplate.delete(animalServiceUrl + "/animals/" + id);
+        }
+    
+        public void removeAnimalWebClient(int id) {
+            webClient.delete().uri("/animals/" + id).retrieve().bodyToMono(Void.class).block();
+        }
+    }
+</code>
+</pre>
+<h3>AnimalClientService Explanation</h3>
+<button onclick="toggle('animal-client-section');">Show/Hide Explanation</button>
+<div id="animal-client-section" class="hide">    
+    <p>
+        The <code>AnimalClientService</code> class acts as an intermediary between the <code>AnimalClientController</code> and the external Animal RESTful API. It encapsulates the logic for making HTTP requests to the API, using both <code>RestTemplate</code> (synchronous) and <code>WebClient</code> (asynchronous, but used in a blocking manner in this example).
+    </p>
+
+    <h3>Key Components and Functionality:</h3>
+    <ul>
+        <li>
+            <strong><code>@Service</code> Annotation:</strong>
+            <p>Marks this class as a Spring service, making it eligible for component scanning and dependency injection.</p>
+        </li>
+        <li>
+            <strong>Constructor Injection:</strong>
+            <p>The service uses constructor injection to receive the <code>animalServiceUrl</code> (from <code>application.properties</code>), <code>RestTemplate</code>, and <code>WebClient</code> instances. This ensures that the service is fully initialized before use.</p>
+        </li>
+        <li>
+            <strong><code>RestTemplate</code> Methods:</strong>
+            <p>Methods like <code>getAllAnimalsRestTemplate()</code>, <code>getAnimalByIdRestTemplate()</code>, <code>addAnimalRestTemplate()</code>, and <code>removeAnimalRestTemplate()</code> use <code>RestTemplate</code> to make synchronous HTTP requests. These methods are straightforward and easy to understand, but they can block the calling thread while waiting for a response.</p>
+        </li>
+        <li>
+            <strong><code>WebClient</code> Methods:</strong>
+            <p>Methods like <code>getAllAnimalsWebClient()</code>, <code>getAnimalByIdWebClient()</code>, <code>addAnimalWebClient()</code>, and <code>removeAnimalWebClient()</code> use <code>WebClient</code> to make asynchronous HTTP requests. However, in this version of the service, the <code>.block()</code> method is used to convert the reactive <code>Mono</code> or <code>Flux</code> to a regular Java object or collection. This makes these methods behave synchronously, similar to the <code>RestTemplate</code> methods.</p>
+        </li>
+        <li>
+            <strong><code>.block()</code> Usage and Explanation:</strong>
+            <p>
+                The <code>.block()</code> method is used to retrieve the result from a <code>Mono</code> or <code>Flux</code> in a blocking manner. While <code>WebClient</code> is designed for asynchronous, non-blocking communication, using <code>.block()</code> defeats this purpose.
+                <br><br>
+                <strong>Why <code>.block()</code> is Used in This Example:</strong>
+                <ul>
+                    <li><strong>Simplicity:</strong> It simplifies the service implementation, making it easier to understand and work with, especially for those new to reactive programming.</li>
+                    <li><strong>Controller Compatibility:</strong> The controller in this example is designed to work with regular Java objects and collections, not reactive types like <code>Mono</code> and <code>Flux</code>. Using <code>.block()</code> ensures that the service returns the expected data types.</li>                    
+                </ul>
+                <br>
+                <strong>Important Note:</strong> In a production environment, it is generally recommended to avoid using <code>.block()</code> and embrace the reactive nature of <code>WebClient</code>. This allows your application to handle concurrent requests more efficiently and improve overall performance.
+            </p>
+        </li>
+    </ul>
+
+    <p>
+        The <code>AnimalClientService</code> provides a flexible way to interact with the Animal REST API, allowing the controller to choose between synchronous (<code>RestTemplate</code>) and asynchronous (<code>WebClient</code> with <code>.block()</code>) communication.
+    </p>
+</div>  
+</div>
+<div class="section">
+<h2>4. Animal Client Controller (AnimalClientController.java)</h2>
+<pre>
+<code class="code">
+    package edu.byui.apj.storefront.tutorial92.controller;
+
+    import edu.byui.apj.storefront.tutorial92.model.Animal;
+    import edu.byui.apj.storefront.tutorial92.service.AnimalClientService;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.stereotype.Controller;
+    import org.springframework.ui.Model;
+    import org.springframework.web.bind.annotation.*;
+    
+    @Controller
+    public class AnimalClientController {
+    
+        private final AnimalClientService animalClientService;
+    
+        @Autowired
+        public AnimalClientController(AnimalClientService animalClientService) {
+            this.animalClientService = animalClientService;
+        }
+    
+        @GetMapping("/")
+        public String index() {
+            return "index";
+        }
+    
+        @GetMapping("/getAllAnimals")
+        public String getAllAnimalsPage(Model model, @RequestParam(defaultValue = "restTemplate") String method) {
+            if ("restTemplate".equals(method)) {
+                model.addAttribute("animals", animalClientService.getAllAnimalsRestTemplate());
+            } else {
+                model.addAttribute("animals", animalClientService.getAllAnimalsWebClient());
+            }
+            model.addAttribute("method", method);
+            return "getAllAnimals";
+        }
+    
+        @GetMapping("/getAnimalById")
+        public String getAnimalByIdPage(Model model) {
+            model.addAttribute("animal", new Animal());
+            return "getAnimalById";
+        }
+    
+        @PostMapping("/getAnimalById")
+        public String getAnimalById(Model model, @RequestParam int id, @RequestParam(defaultValue = "restTemplate") String method) {
+            if ("restTemplate".equals(method)) {
+                model.addAttribute("animal", animalClientService.getAnimalByIdRestTemplate(id));
+            } else {
+                model.addAttribute("animal", animalClientService.getAnimalByIdWebClient(id));
+            }
+            model.addAttribute("method", method);
+            return "getAnimalById";
+        }
+    
+        @GetMapping("/addAnimal")
+        public String addAnimalPage(Model model) {
+            model.addAttribute("animal", new Animal());
+            return "addAnimal";
+        }
+    
+        @PostMapping("/addAnimal")
+        public String addAnimal(Model model, @ModelAttribute Animal animal, @RequestParam(defaultValue = "restTemplate") String method) {
+            if ("restTemplate".equals(method)) {
+                animalClientService.addAnimalRestTemplate(animal);
+            } else {
+                animalClientService.addAnimalWebClient(animal);
+            }
+            return "redirect:/getAllAnimals?method=" + method;
+        }
+    
+        @GetMapping("/removeAnimal")
+        public String removeAnimalPage(Model model) {
+            model.addAttribute("animal", new Animal());
+            return "removeAnimal";
+        }
+    
+        @PostMapping("/removeAnimal")
+        public String removeAnimal(Model model, @RequestParam int id, @RequestParam(defaultValue = "restTemplate") String method) {
+            if ("restTemplate".equals(method)) {
+                animalClientService.removeAnimalRestTemplate(id);
+            } else {
+                animalClientService.removeAnimalWebClient(id);
+            }
+            return "redirect:/getAllAnimals?method=" + method;
+        }
+    }
+</code>
+</pre>
+<h3>AnimalClientController Explanation</h3>
+<button onclick="toggle('animal-controller-section');">Show/Hide Explanation</button>
+<div id="animal-controller-section" class="hide">    
+    <p>
+        The <code>AnimalClientController</code> class acts as the bridge between the user interface (Thymeleaf templates) and the backend service (<code>AnimalClientService</code>). It handles HTTP requests from the browser, interacts with the service to fetch or modify data, and passes data to the Thymeleaf templates for rendering.
+    </p>
+
+    <h3>Key Components and Functionality:</h3>
+    <ul>
+        <li>
+            <strong><code>@Controller</code> Annotation:</strong>
+            <p>Marks this class as a Spring MVC controller, enabling it to handle web requests.</p>
+        </li>
+        <li>
+            <strong>Constructor Injection (<code>AnimalClientService</code>):</strong>
+            <p>Injects an instance of <code>AnimalClientService</code> into the controller. This allows the controller to use the service's methods to interact with the Animal REST API. This is the preferred method for dependency injection.</p>
+        </li>
+        <li>
+            <strong><code>@GetMapping("/")</code> <code>index()</code>:</strong>
+            <p>Handles <code>GET</code> requests to the root URL ("/"). It simply returns the name of the Thymeleaf template ("index"), which displays links to the other pages.</p>
+        </li>
+        <li>
+            <strong><code>@GetMapping("/getAllAnimals")</code> <code>getAllAnimalsPage(Model model, @RequestParam(defaultValue = "restTemplate") String method)</code>:</strong>
+            <p>Handles <code>GET</code> requests to "/getAllAnimals". Retrieves a list of all animals from the Animal API using either <code>RestTemplate</code> or <code>WebClient</code>, based on the <code>method</code> query parameter. Adds the results and the method used to the <code>Model</code> for rendering by the "getAllAnimals" template.</p>
+        </li>
+        <li>
+            <strong><code>@GetMapping("/getAnimalById")</code> <code>getAnimalByIdPage(Model model)</code>:</strong>
+            <p>Handles <code>GET</code> requests to "/getAnimalById". Adds an empty <code>Animal</code> object to the model and returns the "getAnimalById" template, which contains a form for the user to enter an animal ID.</p>
+        </li>
+        <li>
+            <strong><code>@PostMapping("/getAnimalById")</code> <code>getAnimalById(Model model, @RequestParam int id, @RequestParam(defaultValue = "restTemplate") String method)</code>:</strong>
+            <p>Handles <code>POST</code> requests to "/getAnimalById". Retrieves a specific animal by its ID, using either <code>RestTemplate</code> or <code>WebClient</code>. Adds the retrieved animal and the method used to the <code>Model</code> for rendering by the "getAnimalById" template.</p>
+        </li>
+        <li>
+            <strong><code>@GetMapping("/addAnimal")</code> <code>addAnimalPage(Model model)</code>:</strong>
+            <p>Handles <code>GET</code> requests to "/addAnimal". Adds an empty <code>Animal</code> object to the model and returns the "addAnimal" template, which contains a form for the user to add a new animal.</p>
+        </li>
+        <li>
+            <strong><code>@PostMapping("/addAnimal")</code> <code>addAnimal(Model model, @ModelAttribute Animal animal, @RequestParam(defaultValue = "restTemplate") String method)</code>:</strong>
+            <p>Handles <code>POST</code> requests to "/addAnimal". Receives an <code>Animal</code> object from the request body (using <code>@ModelAttribute</code>) and adds it to the Animal API using the selected method (<code>RestTemplate</code> or <code>WebClient</code>). Redirects the user to the "/getAllAnimals" page, passing the method used as a query parameter.</p>
+        </li>
+        <li>
+            <strong><code>@GetMapping("/removeAnimal")</code> <code>removeAnimalPage(Model model)</code>:</strong>
+            <p>Handles <code>GET</code> requests to "/removeAnimal". Adds an empty <code>Animal</code> object to the model and returns the "removeAnimal" template, which contains a form for the user to enter an animal ID to remove.</p>
+        </li>
+        <li>
+            <strong><code>@PostMapping("/removeAnimal")</code> <code>removeAnimal(Model model, @RequestParam int id, @RequestParam(defaultValue = "restTemplate") String method)</code>:</strong>
+            <p>Handles <code>POST</code> requests to "/removeAnimal". Removes the animal with the specified ID from the Animal API using the selected method. Redirects the user to the "/getAllAnimals" page, passing the method used as a query parameter.</p>
+        </li>
+        <li>
+            <strong><code>Model model</code>:</strong>
+            <p>The <code>Model</code> object is used to pass data from the controller to the Thymeleaf template. Attributes added to the model are available for use in the template.</p>
+        </li>
+        <li>
+            <strong><code>@RequestParam</code>:</strong>
+            <p>Used to extract query parameters from the request URL.</p>
+        </li>
+        <li>
+            <strong><code>@PathVariable</code>:</strong>
+            <p>(Not used in this version) Used to extract path variables from the request URL.</p>
+        </li>
+        <li>
+            <strong><code>@ModelAttribute</code>:</strong>
+            <p>Used to bind request parameters to a model object (in this case, an <code>Animal</code> object).</p>
+        </li>
+    </ul>
+
+    <p>
+        The controller orchestrates the interaction between the user interface and the backend service, providing a clear separation of concerns and making the application more maintainable.
+    </p>
+</div>
+</div>
+<div class="section">
+<h2>5. Animal Model (Animal.java)</h2>
+<pre>
+<code class="code">
+    package edu.byui.apj.storefront.tutorial92.model;
+
+    public class Animal {
+        private int id;
+        private String name;
+        private int age;
+        private String diet;
+        private String species;
+    
+        // Constructors, getters, setters, and toString()
+    
+        public int getId() {
+            return id;
+        }
+    
+        public void setId(int id) {
+            this.id = id;
+        }
+    
+        public String getName() {
+            return name;
+        }
+    
+        public void setName(String name) {
+            this.name = name;
+        }
+    
+        public int getAge() {
+            return age;
+        }
+    
+        public void setAge(int age) {
+            this.age = age;
+        }
+    
+        public String getDiet() {
+            return diet;
+        }
+    
+        public void setDiet(String diet) {
+            this.diet = diet;
+        }
+    
+        public String getSpecies() {
+            return species;
+        }
+    
+        public void setSpecies(String species) {
+            this.species = species;
+        }
+    
+        @Override
+        public String toString() {
+            return "Animal{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", age=" + age +
+                    ", diet='" + diet + '\'' +
+                    ", species='" + species + '\'' +
+                    '}';
+        }
+    }
+</code>
+</pre>
+<h3>Why Have a Separate Animal Model in the Client?</h3>
+<button onclick="toggle('animal-model-section');">Show/Hide Explanation</button>
+<div id="animal-model-section" class="hide">    
+    <p>
+        It's generally better to have your own copy of the <code>Animal</code> model in your client application rather than directly borrowing it from the service's module. Here's why:
+    </p>
+
+    <h3>Reasons for Having Your Own Model:</h3>
+    <ul>
+        <li>
+            <strong>Decoupling:</strong>
+            <p>Your client and service should be independent. Using the service's model creates unwanted dependencies. Your client becomes resilient to change in the service.</p>
+        </li>
+        <li>
+            <strong>Versioning:</strong>
+            <p>In real-world scenarios, APIs evolve. Your client can maintain different versions of its model to match different API versions.</p>
+        </li>
+        <li>
+            <strong>Client-Specific Needs:</strong>
+            <p>Your client might not need all service fields, or it might need additional client-specific fields. Your own model allows for tailoring to exact requirements.</p>
+        </li>
+        <li>
+            <strong>Serialization/Deserialization:</strong>
+            <p>Control how JSON is mapped to Java objects in your client. Customize the process using annotations for accurate data mapping.</p>
+        </li>
+        <li>
+            <strong>Maintainability:</strong>
+            <p>Separate models improve maintainability. Changes in one module are less likely to cause unintended consequences in the other.</p>
+        </li>
+    </ul>
+
+    <h3>When Borrowing Might Be Considered (But Still Generally Discouraged):</h3>
+    <ul>
+        <li>
+            <strong>Extremely Tightly Coupled Systems:</strong>
+            <p>In rare cases, if your client and service are always deployed together and changes are in lockstep, you <em>might</em> consider sharing. However, decoupling is still better.</p>
+        </li>
+        <li>
+            <strong>Internal Microservices:</strong>
+            <p>If you have internal microservices developed and maintained by the same team, you could share. But this still increases the risk of unwanted side effects.</p>
+        </li>
+    </ul>
+
+    <p>
+        <strong>In summary:</strong> It is best practice to create a separate <code>Animal</code> model in the client application. This practice promotes loose coupling, improved versioning, and better maintainability.
+    </p>
+</div>
+</div>
+<div class="section">
+<h2>6. Thymeleaf Templates</h2>
+<p>Place the following files in the main/resources/templates folder.</p>
+<ul>
+    <li><a href="files/tutorial9-2/index.html">index.html</a></li>
+    <li><a href="files/tutorial9-2/addAnimal.html">addAnimal.html</a></li>
+    <li><a href="files/tutorial9-2/getAllAnimals.html">getAllAnimals.html</a></li>
+    <li><a href="files/tutorial9-2/getAnimalById.html">getAnimalById.html</a></li>
+    <li><a href="files/tutorial9-2/removeAnimal.html">removeAnimal.html</a></li>
+</ul>
+</div>
+    <div class="section">
+        <h2>7. Application Properties (application.properties)</h2>
+        <pre>
+<code class="code">
+animal.service.url=http://localhost:8080
+server.port=8081
+</code>
+        </pre>
+    </div>
+
+    <div class="section">
+        <h2>8. Running the Application</h2>
+        <ul>
+            <li>Run the <code>AnimalClientApplication</code> class using mvn spring-boot:run. </li>
+            <li>Ensure that the Animal Service is already running on the specified port (8080). See section 8 of <a href="tutorial9-1.html">tutorial9-1.html</a> for details.</li>
+            <li>Access the application in your browser using <a href="http://localhost:8081/">http://localhost:8081/</a>.</li>
+        </ul>
+    </div>
+    <footer>        
+        <p>&copy; 2025 - Brigham Young University, Idaho - All Rights Reserved</p>
+    </footer>
+<script>
+    function toggle(id){
+        let item = document.getElementById(id);
+        item.classList.toggle("show");
+        item.classList.toggle("hide");
+    }
+</script>    
+</body>
