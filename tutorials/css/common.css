@@ -1,0 +1,25 @@
+body {
+    font-family: sans-serif;
+    margin: 20px;
+    background-color: aliceblue;
+}
+header, footer{
+    background-color: rgb(0, 109, 182);
+    color: white;
+    display: flex;
+    align-items: center;            
+}
+header h2{
+    color: white;
+    padding-left: 5rem;
+}
+footer p{
+    padding: 1rem;
+}
+
+.show{
+    display: block;
+}
+.hide{
+    display: none;
+}
