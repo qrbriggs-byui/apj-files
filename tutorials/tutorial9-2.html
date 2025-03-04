@@ -34,7 +34,7 @@
 
     <div class="section">
         <h2>1. Project Setup</h2>
-        <p>Use Spring Initializr (start.spring.io) or your IDE to create a new Spring Boot project. Add the "Spring Web" and "Thymeleaf" dependencies.</p>
+        <p>Use Spring Initializr (start.spring.io) or your IDE to create a new Spring Boot project. Add the "Spring Web" and "Lombok" dependencies.</p>
     </div>
 
     <div class="section">
@@ -344,69 +344,20 @@ animal-client/
 </div>
 <div class="section">
 <h2>5. Animal Model (Animal.java)</h2>
+<p>For the model, this time we are going to use Lombok to generate all the getters, setters, required args constructor and toString methods.</p>
 <pre>
 <code class="code">
     package edu.byui.apj.storefront.tutorial92.model;
 
+    import lombok.Data;
+    
+    @Data
     public class Animal {
         private int id;
         private String name;
         private int age;
         private String diet;
-        private String species;
-    
-        // Constructors, getters, setters, and toString()
-    
-        public int getId() {
-            return id;
-        }
-    
-        public void setId(int id) {
-            this.id = id;
-        }
-    
-        public String getName() {
-            return name;
-        }
-    
-        public void setName(String name) {
-            this.name = name;
-        }
-    
-        public int getAge() {
-            return age;
-        }
-    
-        public void setAge(int age) {
-            this.age = age;
-        }
-    
-        public String getDiet() {
-            return diet;
-        }
-    
-        public void setDiet(String diet) {
-            this.diet = diet;
-        }
-    
-        public String getSpecies() {
-            return species;
-        }
-    
-        public void setSpecies(String species) {
-            this.species = species;
-        }
-    
-        @Override
-        public String toString() {
-            return "Animal{" +
-                    "id=" + id +
-                    ", name='" + name + '\'' +
-                    ", age=" + age +
-                    ", diet='" + diet + '\'' +
-                    ", species='" + species + '\'' +
-                    '}';
-        }
+        private String species;    
     }
 </code>
 </pre>
